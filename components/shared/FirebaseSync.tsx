@@ -3,22 +3,9 @@
 import { useState } from "react";
 import { CloudUpload, X } from "lucide-react";
 import { ToastNotifier } from "./ToastNotifier";
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { loadFromLocal } from "@/lib/storage";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCj9YZuqOjxTrmBzflRYUl6T6WlATGs4qA",
-  authDomain: "merdeka-asesmen.firebaseapp.com",
-  projectId: "merdeka-asesmen",
-  storageBucket: "merdeka-asesmen.firebasestorage.app",
-  messagingSenderId: "890961678018",
-  appId: "1:890961678018:web:bf0a43505609b75100355b"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 export function FirebaseSync() {
   const [isOpen, setIsOpen] = useState(false);
