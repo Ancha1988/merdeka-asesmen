@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Merdeka Asesmen",
+  "description": "Sistem Penilaian Kurikulum Merdeka untuk Guru Indonesia, offline-first dan sederhana.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
