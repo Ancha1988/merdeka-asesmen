@@ -89,17 +89,20 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
                try {
                  const checks = JSON.parse(String(val));
                  if (typeof checks === "object") {
-                   const scores = Object.values(checks)
-                     .filter(v => typeof v === 'number' || (typeof v === 'string' && v !== ""))
-                     .map(v => Number(v) || 0);
-                   
+                   const totalChecks = Object.values(checks).filter(Boolean).length;
+                   const minKriteria = kktpObj.minKriteriaTuntas || 1;
                    const totalInd = kktpObj.indikator?.length || 1;
                    
-                   if (scores.length > 0) {
-                     const sum = scores.reduce((a, b) => a + b, 0);
-                     nilaiAngka = Math.round(sum / totalInd);
+                   const tuntas = totalChecks >= minKriteria;
+                   
+                   if (tuntas) {
+                     if (totalInd <= minKriteria) {
+                       nilaiAngka = 100;
+                     } else {
+                       nilaiAngka = Math.round(70 + ((totalChecks - minKriteria) / (totalInd - minKriteria)) * 30);
+                     }
                    } else {
-                     nilaiAngka = 0;
+                     nilaiAngka = Math.round((totalChecks / minKriteria) * 69);
                    }
                    
                    formatInput = "angka"; // Store as numerical so pengolahan works
@@ -152,34 +155,25 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
 
   const renderIndicatorInput = (mId: string, k: Kktp, ind: any) => {
     const defaultVal = localData[mId]?.[k.kktpId] ?? "";
-    let checks: Record<string, string | number> = {};
+    let checks: Record<string, boolean> = {};
     try {
       checks = (defaultVal && typeof defaultVal === "string" && defaultVal.startsWith("{")) ? JSON.parse(defaultVal) : {};
     } catch(e) {}
     
-    // For legacy booleans, don't show as value, reset to empty
-    let val: string | number = checks[ind.indikatorId] !== undefined ? checks[ind.indikatorId] : "";
-    if (typeof val === 'boolean') {
-      val = val ? 100 : 0; // Legacy conversion
-    }
+    const isChecked = !!checks[ind.indikatorId];
 
     return (
-      <input 
-        type="number"
-        min="0" max="100"
-        value={val}
-        onChange={(e) => {
-          let numVal = Number(e.target.value);
-          if (numVal > 100) numVal = 100;
-          if (numVal < 0) numVal = 0;
-          const newChecks = { ...checks, [ind.indikatorId]: e.target.value === "" ? "" : numVal };
-          handleCellChange(mId, k.kktpId, JSON.stringify(newChecks));
-        }}
-        className={`w-full px-2 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center ${
-          val !== "" ? 'bg-green-50 border-green-200 text-green-700 font-medium' : 'border-slate-200'
-        }`}
-        placeholder="0-100"
-      />
+      <div className="flex justify-center items-center h-full pt-1">
+        <input 
+          type="checkbox"
+          checked={isChecked}
+          onChange={(e) => {
+            const newChecks = { ...checks, [ind.indikatorId]: e.target.checked };
+            handleCellChange(mId, k.kktpId, JSON.stringify(newChecks));
+          }}
+          className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+        />
+      </div>
     );
   };
 
