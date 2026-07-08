@@ -89,26 +89,25 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
                try {
                  const checks = JSON.parse(String(val));
                  if (typeof checks === "object") {
-                   const totalChecks = Object.values(checks).filter(Boolean).length;
-                   const minKriteria = kktpObj.minKriteriaTuntas || 1;
+                   const scores = Object.values(checks)
+                     .filter(v => typeof v === 'number' || (typeof v === 'string' && v !== ""))
+                     .map(v => Number(v) || 0);
+                   
                    const totalInd = kktpObj.indikator?.length || 1;
                    
-                   const tuntas = totalChecks >= minKriteria;
-                   
-                   if (tuntas) {
-                     if (totalInd <= minKriteria) {
-                       nilaiAngka = 100;
-                     } else {
-                       nilaiAngka = Math.round(70 + ((totalChecks - minKriteria) / (totalInd - minKriteria)) * 30);
-                     }
+                   if (scores.length > 0) {
+                     const sum = scores.reduce((a, b) => a + b, 0);
+                     nilaiAngka = Math.round(sum / totalInd);
                    } else {
-                     nilaiAngka = Math.round((totalChecks / minKriteria) * 69);
+                     nilaiAngka = 0;
                    }
                    
                    formatInput = "angka"; // Store as numerical so pengolahan works
                  }
                } catch (e) {
                  // Ignore parsing errors, potentially legacy text
+                 nilaiAngka = Number(val) || 0;
+                 formatInput = "angka";
                }
             }
 
@@ -151,6 +150,39 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
     );
   }
 
+  const renderIndicatorInput = (mId: string, k: Kktp, ind: any) => {
+    const defaultVal = localData[mId]?.[k.kktpId] ?? "";
+    let checks: Record<string, string | number> = {};
+    try {
+      checks = (defaultVal && typeof defaultVal === "string" && defaultVal.startsWith("{")) ? JSON.parse(defaultVal) : {};
+    } catch(e) {}
+    
+    // For legacy booleans, don't show as value, reset to empty
+    let val: string | number = checks[ind.indikatorId] !== undefined ? checks[ind.indikatorId] : "";
+    if (typeof val === 'boolean') {
+      val = val ? 100 : 0; // Legacy conversion
+    }
+
+    return (
+      <input 
+        type="number"
+        min="0" max="100"
+        value={val}
+        onChange={(e) => {
+          let numVal = Number(e.target.value);
+          if (numVal > 100) numVal = 100;
+          if (numVal < 0) numVal = 0;
+          const newChecks = { ...checks, [ind.indikatorId]: e.target.value === "" ? "" : numVal };
+          handleCellChange(mId, k.kktpId, JSON.stringify(newChecks));
+        }}
+        className={`w-full px-2 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center ${
+          val !== "" ? 'bg-green-50 border-green-200 text-green-700 font-medium' : 'border-slate-200'
+        }`}
+        placeholder="0-100"
+      />
+    );
+  };
+
   const renderInput = (mId: string, k: Kktp) => {
     const defaultVal = localData[mId]?.[k.kktpId] ?? "";
     
@@ -166,8 +198,8 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
             if (val < 0) val = 0;
             handleCellChange(mId, k.kktpId, val);
           }}
-          className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center ${
-            defaultVal !== "" ? 'bg-green-50 border-green-200' : 'border-slate-200'
+          className={`w-full px-2 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center ${
+            defaultVal !== "" ? 'bg-green-50 border-green-200 text-green-700 font-medium' : 'border-slate-200'
           }`}
           placeholder="0-100"
         />
@@ -179,8 +211,8 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
         <select
           value={defaultVal}
           onChange={(e) => handleCellChange(mId, k.kktpId, e.target.value)}
-          className={`w-full px-2 py-1 border rounded focus:outline-none text-sm ${
-            defaultVal !== "" ? 'bg-green-50 border-green-200' : 'border-slate-200'
+          className={`w-full px-2 py-2 border rounded focus:outline-none text-sm ${
+            defaultVal !== "" ? 'bg-green-50 border-green-200 text-green-700 font-medium' : 'border-slate-200'
           }`}
         >
           <option value="">-</option>
@@ -192,49 +224,22 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
     }
 
     if (k.jenis === "deskripsi") {
-      let checks: Record<string, boolean> = {};
-      let isLegacyText = false;
-      try {
-        checks = (defaultVal && typeof defaultVal === "string" && defaultVal.startsWith("{")) ? JSON.parse(defaultVal) : {};
-        if (defaultVal && !defaultVal.startsWith("{")) isLegacyText = true;
-      } catch(e) {
-        isLegacyText = true;
-      }
-      
-      const totalChecks = Object.values(checks).filter(Boolean).length;
-      const tuntas = totalChecks >= (k.minKriteriaTuntas || 1);
-      const isFilled = Object.keys(checks).length > 0;
-
       return (
-        <div className="space-y-2 text-xs min-w-[200px]">
-          {isLegacyText && (
-             <div className="text-red-500 italic text-[10px]">Ada data text lama, akan tertimpa saat simpan ceklis ini.</div>
-          )}
-          {k.indikator.map(ind => (
-             <label key={ind.indikatorId} className="flex items-start gap-1.5 p-1.5 hover:bg-slate-100 rounded cursor-pointer leading-tight border border-transparent hover:border-slate-200">
-                <input 
-                  type="checkbox" 
-                  className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 shrink-0"
-                  checked={!!checks[ind.indikatorId]}
-                  onChange={(e) => {
-                    const newChecks = { ...checks, [ind.indikatorId]: e.target.checked };
-                    handleCellChange(mId, k.kktpId, JSON.stringify(newChecks));
-                  }}
-                />
-                <span className="text-slate-700">{ind.deskripsi}</span>
-             </label>
-          ))}
-          {isFilled && (
-             <div className="mt-2 pt-2 border-t border-slate-200">
-               <div className={`font-semibold ${tuntas ? 'text-emerald-600' : 'text-rose-600'}`}>
-                 {totalChecks} Tercapai {tuntas ? '(Tuntas)' : '(Belum Tuntas)'}
-               </div>
-               <div className="text-slate-500 font-medium">
-                 Min. {k.minKriteriaTuntas || 1} Kriteria
-               </div>
-             </div>
-          )}
-        </div>
+        <input 
+          type="number"
+          min="0" max="100"
+          value={defaultVal}
+          onChange={(e) => {
+            let val = Number(e.target.value);
+            if (val > 100) val = 100;
+            if (val < 0) val = 0;
+            handleCellChange(mId, k.kktpId, val);
+          }}
+          className={`w-full px-2 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center ${
+            defaultVal !== "" ? 'bg-green-50 border-green-200 text-green-700 font-medium' : 'border-slate-200'
+          }`}
+          placeholder="0-100"
+        />
       );
     }
 
@@ -263,14 +268,27 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-700">
             <tr>
               <th className="px-4 py-3 font-semibold border-r border-slate-200 sticky left-0 bg-slate-50 z-10 min-w-[200px]">Nama Murid</th>
-              {availableKktp.map(k => (
-                <th key={k.kktpId} className="px-4 py-3 font-semibold border-r border-slate-200 min-w-[150px] max-w-[200px]">
-                  <div className="truncate" title={k.nama}>{k.nama}</div>
-                  <div className="text-xs font-normal text-slate-500 mt-1 capitalize bg-slate-100 p-1 rounded inline-block">
-                    {k.jenis} • {k.bobot}%
-                  </div>
-                </th>
-              ))}
+              {availableKktp.map(k => {
+                if (k.jenis === "deskripsi" && k.indikator && k.indikator.length > 0) {
+                  return k.indikator.map((ind, i) => (
+                    <th key={`${k.kktpId}-${ind.indikatorId}`} className="px-4 py-3 font-semibold border-r border-slate-200 min-w-[150px] max-w-[250px]">
+                      <div className="truncate text-[11px] text-slate-500 mb-1" title={k.nama}>{k.nama}</div>
+                      <div className="line-clamp-2 text-sm text-blue-700 leading-tight" title={ind.deskripsi}>{i+1}. {ind.deskripsi}</div>
+                      <div className="text-[10px] font-normal text-slate-400 mt-1 capitalize bg-slate-100 px-1.5 py-0.5 rounded inline-block">
+                        Indikator KKTP
+                      </div>
+                    </th>
+                  ));
+                }
+                return (
+                  <th key={k.kktpId} className="px-4 py-3 font-semibold border-r border-slate-200 min-w-[150px] max-w-[200px]">
+                    <div className="truncate" title={k.nama}>{k.nama}</div>
+                    <div className="text-xs font-normal text-slate-500 mt-1 capitalize bg-slate-100 p-1 rounded inline-block">
+                      {k.jenis} • {k.bobot}%
+                    </div>
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
@@ -280,11 +298,20 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
                   <div className="font-medium text-slate-800">{m.nama}</div>
                   <div className="text-xs text-slate-500">NISN: {m.nisn} | {m.jenisKelamin}</div>
                 </td>
-                {availableKktp.map(k => (
-                  <td key={k.kktpId} className="px-2 py-2 border-r border-slate-200 align-top">
-                    {renderInput(m.muridId, k)}
-                  </td>
-                ))}
+                {availableKktp.map(k => {
+                  if (k.jenis === "deskripsi" && k.indikator && k.indikator.length > 0) {
+                    return k.indikator.map(ind => (
+                      <td key={`${k.kktpId}-${ind.indikatorId}`} className="px-2 py-2 border-r border-slate-200 align-top">
+                        {renderIndicatorInput(m.muridId, k, ind)}
+                      </td>
+                    ))
+                  }
+                  return (
+                    <td key={k.kktpId} className="px-2 py-2 border-r border-slate-200 align-top">
+                      {renderInput(m.muridId, k)}
+                    </td>
+                  )
+                })}
               </tr>
             ))}
           </tbody>
