@@ -16,7 +16,7 @@ export default function RekapPresensiPage() {
 
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
-    setIsMounted(true);
+    setTimeout(() => setIsMounted(true), 0);
   }, []);
 
   if (!isMounted || isMasterLoading || isPresensiLoading) return <div className="p-6">Memuat data...</div>;

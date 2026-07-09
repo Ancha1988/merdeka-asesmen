@@ -34,19 +34,7 @@ export default function RaporPage() {
   
   const printRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted || isMasterLoading || isRaporLoading) {
-    return <div className="p-6">Memuat data rapor...</div>;
-  }
-
-  if (!tahunAjaranAktif) {
-    return <div className="p-6">Harap aktifkan Tahun Ajaran di Pengaturan terlebih dahulu.</div>;
-  }
-
-  const availableKelas = kelas.filter(k => k.tahunId === tahunAjaranAktif.tahunId);
+  const availableKelas = kelas.filter(k => k.tahunId === tahunAjaranAktif?.tahunId);
   const selectedKelas = kelas.find(k => k.kelasId === selectedKelasId);
   const availableMurid = murid.filter(m => m.kelasId === selectedKelasId && m.status === "aktif")
                               .sort((a, b) => a.nama.localeCompare(b.nama));
@@ -60,7 +48,7 @@ export default function RaporPage() {
   const muridPengolahan = pengolahanNilai.filter(pn => pn.muridId === selectedMuridId && classTps.some(t => t.tpId === pn.tpId));
 
   // Determine current Rapor
-  const currentRaporId = `rap-${tahunAjaranAktif.tahunId}-${tahunAjaranAktif.semester}-${selectedKelasId}-${selectedMuridId}`;
+  const currentRaporId = `rap-${tahunAjaranAktif?.tahunId}-${tahunAjaranAktif?.semester}-${selectedKelasId}-${selectedMuridId}`;
   let initialRapor = raporList.find(r => r.raporId === currentRaporId);
 
   // Default Generate Logic 
@@ -118,6 +106,18 @@ export default function RaporPage() {
       };
     });
   }, [classTps, muridPengolahan]);
+
+  useEffect(() => {
+    setTimeout(() => setIsMounted(true), 0);
+  }, []);
+
+  if (!isMounted || isMasterLoading || isRaporLoading) {
+    return <div className="p-6">Memuat data rapor...</div>;
+  }
+
+  if (!tahunAjaranAktif) {
+    return <div className="p-6">Harap aktifkan Tahun Ajaran di Pengaturan terlebih dahulu.</div>;
+  }
 
   // Active Deskripsi
   const activeDeskripsi = initialRapor?.deskripsiMapel[0]?.deskripsiNlg || autoData.NLG;
@@ -302,7 +302,7 @@ export default function RaporPage() {
                     </div>
                   ) : (
                     <div className="p-4 bg-slate-50 border border-slate-200 italic text-sm text-slate-700 leading-relaxed min-h-[5rem]">
-                       "{activeDeskripsi}"
+                       &quot;{activeDeskripsi}&quot;
                     </div>
                   )}
                </div>
