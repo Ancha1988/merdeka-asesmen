@@ -112,6 +112,34 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
                  nilaiAngka = Number(val) || 0;
                  formatInput = "angka";
                }
+            } else if (kktpObj.jenis === "rubrik") {
+               try {
+                 const selectedLevels = JSON.parse(String(val));
+                 if (typeof selectedLevels === "object" && kktpObj.rubrik) {
+                   const indicators = Array.from(new Set(kktpObj.rubrik.map(r => r.indikatorId).filter(Boolean))) as string[];
+                   let totalScore = 0;
+                   let count = 0;
+                   
+                   for (const ind of indicators) {
+                     const level = selectedLevels[ind];
+                     if (level) {
+                       // find the average of nilaiMin and nilaiMax for this level
+                       const rubrikItem = kktpObj.rubrik.find(r => r.indikatorId === ind && r.tingkatan === level);
+                       if (rubrikItem) {
+                         totalScore += (rubrikItem.nilaiMin + rubrikItem.nilaiMax) / 2;
+                         count++;
+                       }
+                     }
+                   }
+                   
+                   if (count > 0) {
+                     nilaiAngka = Math.round(totalScore / count);
+                     formatInput = "angka";
+                   }
+                 }
+               } catch (e) {
+                 // ignore
+               }
             }
 
             newSumatifItems.push({
@@ -174,6 +202,37 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
           className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
         />
       </div>
+    );
+  };
+
+  const renderRubrikIndicatorInput = (mId: string, k: Kktp, indId: string) => {
+    const defaultVal = localData[mId]?.[k.kktpId] ?? "";
+    let selectedLevels: Record<string, string> = {};
+    try {
+      selectedLevels = (defaultVal && typeof defaultVal === "string" && defaultVal.startsWith("{")) ? JSON.parse(defaultVal) : {};
+    } catch(e) {}
+    
+    const selectedLevel = selectedLevels[indId] || "";
+    
+    // Get unique rubrik options for this indicator
+    const options = k.rubrik?.filter(r => r.indikatorId === indId) || [];
+
+    return (
+      <select
+        value={selectedLevel}
+        onChange={(e) => {
+          const newLevels = { ...selectedLevels, [indId]: e.target.value };
+          handleCellChange(mId, k.kktpId, JSON.stringify(newLevels));
+        }}
+        className={`w-full px-2 py-2 border rounded focus:outline-none text-sm ${
+          selectedLevel !== "" ? 'bg-green-50 border-green-200 text-green-700 font-medium' : 'border-slate-200'
+        }`}
+      >
+        <option value="">-</option>
+        {options.map(r => (
+          <option key={r.tingkatan} value={r.tingkatan}>{r.tingkatan} ({r.label})</option>
+        ))}
+      </select>
     );
   };
 
@@ -269,11 +328,27 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
                       <div className="truncate text-[11px] text-slate-500 mb-1" title={k.nama}>{k.nama}</div>
                       <div className="line-clamp-2 text-sm text-blue-700 leading-tight" title={ind.deskripsi}>{i+1}. {ind.deskripsi}</div>
                       <div className="text-[10px] font-normal text-slate-400 mt-1 capitalize bg-slate-100 px-1.5 py-0.5 rounded inline-block">
-                        Indikator KKTP
+                        Indikator KKTP (Ceklis)
                       </div>
                     </th>
                   ));
                 }
+                
+                if (k.jenis === "rubrik" && k.rubrik && k.rubrik.length > 0) {
+                  const indicators = Array.from(new Set(k.rubrik.map(r => r.indikatorId).filter(Boolean))) as string[];
+                  if (indicators.length > 0) {
+                    return indicators.map((indId, i) => (
+                      <th key={`${k.kktpId}-${indId}`} className="px-4 py-3 font-semibold border-r border-slate-200 min-w-[150px] max-w-[250px]">
+                        <div className="truncate text-[11px] text-slate-500 mb-1" title={k.nama}>{k.nama}</div>
+                        <div className="line-clamp-2 text-sm text-blue-700 leading-tight" title={indId}>{i+1}. {indId}</div>
+                        <div className="text-[10px] font-normal text-slate-400 mt-1 capitalize bg-slate-100 px-1.5 py-0.5 rounded inline-block">
+                          Indikator KKTP (Rubrik)
+                        </div>
+                      </th>
+                    ));
+                  }
+                }
+                
                 return (
                   <th key={k.kktpId} className="px-4 py-3 font-semibold border-r border-slate-200 min-w-[150px] max-w-[200px]">
                     <div className="truncate" title={k.nama}>{k.nama}</div>
@@ -300,6 +375,18 @@ export function InputNilaiTab({ kelasId, tpId }: InputNilaiTabProps) {
                       </td>
                     ))
                   }
+                  
+                  if (k.jenis === "rubrik" && k.rubrik && k.rubrik.length > 0) {
+                    const indicators = Array.from(new Set(k.rubrik.map(r => r.indikatorId).filter(Boolean))) as string[];
+                    if (indicators.length > 0) {
+                      return indicators.map(indId => (
+                        <td key={`${k.kktpId}-${indId}`} className="px-2 py-2 border-r border-slate-200 align-top">
+                          {renderRubrikIndicatorInput(m.muridId, k, indId)}
+                        </td>
+                      ))
+                    }
+                  }
+                  
                   return (
                     <td key={k.kktpId} className="px-2 py-2 border-r border-slate-200 align-top">
                       {renderInput(m.muridId, k)}

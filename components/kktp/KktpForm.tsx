@@ -191,7 +191,7 @@ export function KktpForm({ initialData, selectedTp, currentTotalBobot, onSubmit,
             name="rubrik"
             control={control}
             render={({ field }) => (
-              <RubrikBuilder items={field.value || []} onChange={field.onChange} error={errors.rubrik?.message as string} />
+              <RubrikBuilder items={field.value || []} onChange={field.onChange} tpIndikator={selectedTp.indikator} error={errors.rubrik?.message as string} />
             )}
           />
         )}
