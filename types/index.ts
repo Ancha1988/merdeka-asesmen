@@ -107,6 +107,7 @@ export interface KktpIndikator {
 }
 
 export interface RubrikItem {
+  indikator?: string;
   tingkatan: "BB" | "L" | "C" | "M";
   label: string;
   deskripsi: string;

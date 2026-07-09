@@ -1,114 +1,61 @@
 "use client";
 
-import { useAppStore } from "@/store/useAppStore";
-import { Users, BookOpen, GraduationCap, School } from "lucide-react";
+import { useMasterData } from "@/hooks/useMasterData";
+import { BookOpen, Users, ClipboardList, Award } from "lucide-react";
 import Link from "next/link";
 
-export default function Home() {
-  const { tahunAjaranAktif, kelasAktif, muridAktif } = useAppStore();
+export default function DashboardPage() {
+  const { tp, kktp, murid, kelas } = useMasterData();
+
+  const stats = [
+    { title: "Tujuan Pembelajaran", value: tp.length, icon: BookOpen, color: "bg-blue-100 text-blue-600", link: "/perencanaan" },
+    { title: "KKTP Dibuat", value: kktp.length, icon: ClipboardList, color: "bg-indigo-100 text-indigo-600", link: "/kktp" },
+    { title: "Total Murid", value: murid.length, icon: Users, color: "bg-green-100 text-green-600", link: "/pengaturan/murid" },
+    { title: "Kelas Aktif", value: kelas.filter(k => k.isActive).length, icon: Award, color: "bg-amber-100 text-amber-600", link: "/pengaturan/kelas" },
+  ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-500 mt-1">Selamat datang di Sistem Asesmen Kurikulum Merdeka.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard 
-          icon={School}
-          title="Tahun Ajaran Aktif" 
-          value={tahunAjaranAktif ? `${tahunAjaranAktif.tahun} - SMT ${tahunAjaranAktif.semester}` : "Belum diatur"} 
-          link="/pengaturan/tahun-ajaran"
-          color="blue"
-        />
-        <StatCard 
-          icon={Users}
-          title="Kelas Aktif" 
-          value={kelasAktif ? kelasAktif.namaKelas : "Belum dipilih"} 
-          link="/pengaturan/kelas"
-          color="blue"
-        />
-        <StatCard 
-          icon={GraduationCap}
-          title="Murid Fokus" 
-          value={muridAktif ? muridAktif.nama : "Belum dipilih"} 
-          link="/pengaturan/murid"
-          color="emerald"
-        />
-        <StatCard 
-          icon={BookOpen}
-          title="Modul & Tujuan" 
-          value="Lihat" 
-          link="/perencanaan"
-          color="amber"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Akses Cepat Pengisian Nilai</h2>
-          <div className="space-y-3">
-            <QuickLink href="/formatif" title="Input Asesmen Formatif" desc="Catatan anekdotal, observasi, dan refleksi murid." />
-            <QuickLink href="/kktp" title="Kelola KKTP" desc="Kriteria Ketercapaian Tujuan Pembelajaran." />
-            <QuickLink href="/sumatif" title="Input Asesmen Sumatif" desc="Nilai akhir tes tertulis dan proyek akhir." />
-            <QuickLink href="/rapor" title="Cetak E-Rapor" desc="Buat laporan capaian kompetensi semester." />
-          </div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-slate-500 mt-1">Selamat datang di aplikasi Merdeka Asesmen</p>
         </div>
+      </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Info Aplikasi</h2>
-          <div className="prose prose-sm text-slate-500">
-            <p><strong>Merdeka Asesmen</strong> adalah aplikasi pencatatan nilai yang difokuskan pada sinkronisasi lokal dan <em>offline-first</em>. Ini berarti seluruh data yang Anda masukkan disimpan dengan aman di <em>browser</em> (Local Storage).</p>
-            <ul>
-              <li>Tidak memerlukan internet saat bekerja.</li>
-              <li>Sistem auto-save dihapus untuk ketepatan konfirmasi ganda (Confirm-to-Save).</li>
-              <li>Selalu pastikan Anda menekan tombol &quot;Simpan&quot;.</li>
-            </ul>
-            <p className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-blue-800">
-              Mulai dengan mengatur Tahun Ajaran, menginput Murid, lalu merancang Modul (Tujuan Pembelajaran).
-            </p>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, idx) => (
+          <Link key={idx} href={stat.link} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${stat.color} group-hover:scale-110 transition-transform`}>
+                <stat.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">{stat.title}</p>
+                <h3 className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</h3>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-8">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">Mulai Cepat</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link href="/perencanaan" className="p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors">
+            <h3 className="font-medium text-blue-900">1. Susun TP & ATP</h3>
+            <p className="text-sm text-slate-500 mt-1">Buat Tujuan Pembelajaran dan alur materi.</p>
+          </Link>
+          <Link href="/kktp" className="p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-colors">
+            <h3 className="font-medium text-indigo-900">2. Tentukan KKTP</h3>
+            <p className="text-sm text-slate-500 mt-1">Pilih metode penilaian (Deskripsi, Rubrik, Interval, Persentase).</p>
+          </Link>
+          <Link href="/formatif" className="p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50 transition-colors">
+            <h3 className="font-medium text-emerald-900">3. Lakukan Asesmen</h3>
+            <p className="text-sm text-slate-500 mt-1">Input nilai formatif atau sumatif murid secara berkala.</p>
+          </Link>
         </div>
       </div>
     </div>
-  );
-}
-
-function StatCard({ title, value, link, icon: Icon, color }: { title: string, value: string, link: string, icon: any, color: 'blue' | 'emerald' | 'amber' }) {
-  const colorStyles = {
-    blue: "bg-blue-50 text-blue-600 border-blue-100",
-    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    amber: "bg-amber-50 text-amber-600 border-amber-100",
-  };
-
-  return (
-    <Link href={link} className="block group">
-      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all h-full">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-slate-500">{title}</h3>
-          <div className={`p-2 rounded-lg ${colorStyles[color]} transition-transform group-hover:scale-110`}>
-            <Icon className="w-5 h-5" />
-          </div>
-        </div>
-        <p className="text-lg font-semibold text-slate-900 truncate">{value}</p>
-      </div>
-    </Link>
-  );
-}
-
-function QuickLink({ href, title, desc }: { href: string, title: string, desc: string }) {
-  return (
-    <Link href={href} className="group block p-4 rounded-lg border border-slate-100 hover:border-blue-100 hover:bg-slate-50 transition-colors">
-      <div className="flex justify-between items-center">
-        <div>
-          <h4 className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">{title}</h4>
-          <p className="text-sm text-slate-500 mt-1">{desc}</p>
-        </div>
-        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors shrink-0">
-          <span className="text-slate-400 group-hover:text-blue-600 text-lg font-bold leading-none">→</span>
-        </div>
-      </div>
-    </Link>
   );
 }
