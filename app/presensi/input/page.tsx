@@ -61,7 +61,7 @@ export default function InputPresensiPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => setIsMounted(true), 0);
+    setIsMounted(true);
   }, []);
 
   // Update default tahunId if changes
