@@ -47,11 +47,31 @@ export function PengolahanTab({ kelasId, tpId }: PengolahanTabProps) {
     if (s.formatInput === "angka") {
       nilai = s.nilaiAngka || 0;
     } else if (s.formatInput === "deskripsi" && s.nilaiDeskripsi) {
-      if (s.nilaiDeskripsi === "BB") nilai = 50;
-      else if (s.nilaiDeskripsi === "L") nilai = 70;
-      else if (s.nilaiDeskripsi === "C") nilai = 85;
-      else if (s.nilaiDeskripsi === "M") nilai = 100;
-      else nilai = 75;
+      if (s.nilaiDeskripsi.startsWith("{")) {
+        try {
+          const vals = JSON.parse(s.nilaiDeskripsi);
+          const valArray = Object.values(vals).filter(Boolean);
+          if (valArray.length > 0) {
+            let total = 0;
+            valArray.forEach((v: any) => {
+              if (v === "BB") total += 50;
+              else if (v === "L") total += 70;
+              else if (v === "C") total += 85;
+              else if (v === "M") total += 100;
+              else total += 75;
+            });
+            nilai = Math.round(total / valArray.length);
+          }
+        } catch (e) {
+          nilai = 75;
+        }
+      } else {
+        if (s.nilaiDeskripsi === "BB") nilai = 50;
+        else if (s.nilaiDeskripsi === "L") nilai = 70;
+        else if (s.nilaiDeskripsi === "C") nilai = 85;
+        else if (s.nilaiDeskripsi === "M") nilai = 100;
+        else nilai = 75;
+      }
     }
     
     // For non-deskripsi types, assuming >= 70 is tuntas
